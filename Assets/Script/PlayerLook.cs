@@ -3,16 +3,16 @@ using UnityEngine.InputSystem;
 
 public class PlayerLook : MonoBehaviour
 {
-    public float mouseSensitivity = 100.0f;
-    public Transform playerBody; // Player 오브젝트를 연결
-    public Transform cameraTransform; // Main Camera 를 연결
+    public float mouseSensitivity = 50.0f;
+    public Transform playerBody;
+    public Transform cameraTransform;
 
     private float xRotation = 0f;
     private Vector2 lookInput;
 
     void Start()
     {
-        Cursor.lockState = CursorLockMode.Locked; // 마우스 커서 고정
+        Cursor.lockState = CursorLockMode.Locked;
     }
 
     void Update()
@@ -21,7 +21,7 @@ public class PlayerLook : MonoBehaviour
         float mouseY = lookInput.y * mouseSensitivity * Time.deltaTime;
 
         xRotation -= mouseY;
-        xRotation = Mathf.Clamp(xRotation, -90f, 90f); // 상하 시점 제한
+        xRotation = Mathf.Clamp(xRotation, -90f, 90f);
 
         cameraTransform.localRotation = Quaternion.Euler(xRotation, 0f, 0f);
         playerBody.Rotate(Vector3.up * mouseX);

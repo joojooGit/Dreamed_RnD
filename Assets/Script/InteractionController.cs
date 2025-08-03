@@ -5,75 +5,77 @@ public class InteractionController : MonoBehaviour
 {
     public Camera playerCamera;
     public float interactionDistance = 3.0f;
-    public LayerMask interactableLayer; // 상호작용 가능한 오브젝트의 레이어
+    public LayerMask interactableLayer;
 
-    private IInteractable currentInteractable; // 현재 감지된 상호작용 가능 오브젝트
+    // This is now only used for potential UI feedback, not the core logic.
+    private IInteractable currentInteractableForFeedback;
 
-    void Update()
+    // OnInteract is now completely self-contained.
+    public void OnInteract(InputValue value)
     {
+        if (value.isPressed)
+        {
+            Debug.Log("E key pressed. Performing interaction check...");
+            
+            Ray ray = playerCamera.ScreenPointToRay(new Vector3(Screen.width / 2, Screen.height / 2));
+            RaycastHit hit;
 
-        Ray rayForDebug = playerCamera.ScreenPointToRay(new Vector3(Screen.width / 2, Screen.height / 2));
-        Debug.DrawRay(rayForDebug.origin, rayForDebug.direction * interactionDistance, Color.red);
-
-        CheckForInteractable();
+            if (Physics.Raycast(ray, out hit, interactionDistance, interactableLayer))
+            {
+                IInteractable interactable = hit.collider.GetComponentInParent<IInteractable>();
+                if (interactable != null)
+                {
+                    Debug.Log("Found interactable: " + hit.collider.name + ". Calling Interact().");
+                    interactable.Interact();
+                }
+                else
+                {
+                    Debug.LogWarning("Raycast hit " + hit.collider.name + ", but it has no IInteractable component.");
+                }
+            }
+            else
+            {
+                Debug.LogWarning("Pressed E but not looking at anything interactable.");
+            }
+        }
     }
 
-    void CheckForInteractable()
+    // The Update loop is now only for visual feedback, like highlighting an object or showing a tooltip.
+    // It is no longer involved in the interaction logic itself.
+    void Update()
+    {
+        CheckForInteractableForFeedback();
+    }
+
+    void CheckForInteractableForFeedback()
     {
         Ray ray = playerCamera.ScreenPointToRay(new Vector3(Screen.width / 2, Screen.height / 2));
         RaycastHit hit;
 
         if (Physics.Raycast(ray, out hit, interactionDistance, interactableLayer))
         {
-            // 광선이 Interactable 레이어의 무언가에 맞았을 때
-            Debug.Log("광선이 맞은 물체: " + hit.collider.name); // 맞은 물체 이름 출력
-
-            IInteractable interactable = hit.collider.GetComponent<IInteractable>();
-            if (interactable != null)
+            IInteractable interactable = hit.collider.GetComponentInParent<IInteractable>();
+            if (currentInteractableForFeedback != interactable)
             {
-                // IInteractable 스크립트를 가지고 있을 때
-                Debug.Log(hit.collider.name + "에서 상호작용 스크립트 발견!");
-                currentInteractable = interactable;
-            }
-            else
-            {
-                // IInteractable 스크립트가 없을 때
-                Debug.Log(hit.collider.name + "에는 상호작용 스크립트가 없음!");
-                currentInteractable = null;
+                currentInteractableForFeedback = interactable;
+                if (currentInteractableForFeedback != null)
+                {
+                    Debug.Log("Now looking at interactable: " + hit.collider.name);
+                }
+                else
+                {
+                    Debug.Log("No longer looking at an interactable (object is not interactable).");
+                }
             }
         }
-        else
+        else if (currentInteractableForFeedback != null)
         {
-            // 광선에 아무것도 맞지 않았을 때
-            currentInteractable = null;
-        }
-    }
-
-    // Input Action 에 연결될 함수
-    public void OnInteract(InputValue value)
-    {
-        // ▼▼▼ 이 코드가 있는지 확인! ▼▼▼
-        Debug.Log("E 키 입력 감지!");
-
-        if (value.isPressed && currentInteractable != null)
-        {
-            currentInteractable.Interact();
-        }
-    }
-    public void PerformInteraction()
-    {
-        // 새로운 디버그 메시지로 함수 호출이 성공했는지 확인합니다.
-        Debug.Log("PerformInteraction 함수 호출 성공!");
-
-        // 현재 바라보고 있는 상호작용 가능한 오브젝트가 있다면, 상호작용을 실행합니다.
-        if (currentInteractable != null)
-        {
-            currentInteractable.Interact();
+            currentInteractableForFeedback = null;
+            Debug.Log("No longer looking at an interactable (looking at empty space).");
         }
     }
 }
 
-// 상호작용 인터페이스 정의
 public interface IInteractable
 {
     void Interact();
