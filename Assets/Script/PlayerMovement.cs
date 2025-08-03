@@ -6,11 +6,14 @@ using UnityEngine.InputSystem;
 public class PlayerMovement : MonoBehaviour
 {
     public float speed = 12f;
+    public float sprintSpeed = 18f;
+    public float jumpHeight = 3f;
     public float gravity = -9.81f;
 
     private CharacterController controller;
     private Vector3 velocity;
     private Vector2 moveInput;
+    private bool isSprinting = false;
 
     void Start()
     {
@@ -25,8 +28,9 @@ public class PlayerMovement : MonoBehaviour
             velocity.y = -2f;
         }
 
+        float currentSpeed = isSprinting ? sprintSpeed : speed;
         Vector3 move = transform.right * moveInput.x + transform.forward * moveInput.y;
-        controller.Move(move * speed * Time.deltaTime);
+        controller.Move(move * currentSpeed * Time.deltaTime);
 
         velocity.y += gravity * Time.deltaTime;
         controller.Move(velocity * Time.deltaTime);
@@ -35,5 +39,18 @@ public class PlayerMovement : MonoBehaviour
     public void OnMove(InputValue value)
     {
         moveInput = value.Get<Vector2>();
+    }
+
+    public void OnJump(InputValue value)
+    {
+        if (value.isPressed && controller.isGrounded)
+        {
+            velocity.y = Mathf.Sqrt(jumpHeight * -2f * gravity);
+        }
+    }
+
+    public void OnSprint(InputValue value)
+    {
+        isSprinting = value.isPressed;
     }
 }
